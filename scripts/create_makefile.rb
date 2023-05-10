@@ -199,6 +199,6 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
   mkfile.puts ''
 
   # Create target to run all tests
-  mkfile.puts "test: #{test_targets.map { |t| t + '.testresult' }.join(' ')} test_summary"
+  mkfile.puts "test: #{test_targets.map { |t| t + '.testresult' }.join(' ')}"
   mkfile.puts ''
 end
