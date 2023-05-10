@@ -21,6 +21,7 @@ MOCK_PREFIX = ENV.fetch('TEST_MOCK_PREFIX', 'mock_')
 MOCK_SUFFIX = ENV.fetch('TEST_MOCK_SUFFIX', '')
 TEST_MAKEFILE = ENV.fetch('TEST_MAKEFILE', File.join(TEST_BUILD_DIR, 'MakefileTestSupport'))
 MOCK_MATCHER = /#{MOCK_PREFIX}[A-Za-z_][A-Za-z0-9_\-\.]+#{MOCK_SUFFIX}/
+ALL_HEADERS = ENV.fetch('ALL_HEADERS',  '')
 
 [TEST_BUILD_DIR, OBJ_DIR, RUNNERS_DIR, MOCKS_DIR, TEST_BIN_DIR].each do |dir|
   FileUtils.mkdir_p dir
@@ -60,7 +61,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
   generator = UnityTestRunnerGenerator.new
 
   # headers that begin with prefix or end with suffix are not included
-  all_headers = Dir["#{SRC_DIR}/**/*.h*"]
+  all_headers = "#{ALL_HEADERS}".split(" ")
 
   def reject_mock_files(file)
     extn = File.extname file
@@ -138,7 +139,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
     module_names_to_mock.each do |name|
       header_to_mock = nil
       all_headers.each do |header|
-        if header =~ /[\/\\]?#{name}$/
+        if File.basename(header) =~ /[\/\\]?#{name}$/
           header_to_mock = header
           break
         end
@@ -163,7 +164,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
     # Build test suite executable
     test_objs = "#{test_obj} #{runner_obj} #{module_obj} #{mock_objs.join(' ')} #{linkonly_objs.join(' ')} #{UNITY_OBJ} #{CMOCK_OBJ}"
     mkfile.puts "#{test_bin}: #{test_objs}"
-    mkfile.puts "\t${CC} -o $@ ${LDFLAGS} #{test_objs}"
+    mkfile.puts "\t${CC} -o $@ #{test_objs} ${LDFLAGS}"
     mkfile.puts ''
 
     # Run test suite and generate report
@@ -181,7 +182,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
     mock_src = File.join(MOCKS_DIR, mock_name + '.c')
     mock_obj = File.join(MOCKS_DIR, mock_name + '.o')
 
-    mkfile.puts "#{mock_src}: #{hdr}"
+    mkfile.puts "#{mock_src} #{mock_header}: #{hdr}"
     mkfile.puts "\t@CMOCK_DIR=${CMOCK_DIR} ruby ${CMOCK_DIR}/scripts/create_mock.rb #{hdr}"
     mkfile.puts ''
 
