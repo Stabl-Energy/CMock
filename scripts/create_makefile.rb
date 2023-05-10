@@ -31,6 +31,16 @@ all_headers_to_mock = []
 
 suppress_error = !ARGV.nil? && !ARGV.empty? && (ARGV[0].casecmp('--SILENT') == 0)
 
+def write_verbose_compile_option (mkfile, command, option_str)
+  mkfile.puts 'ifeq ($(USE_VERBOSE_COMPILE),yes)'
+  mkfile.puts "\t@echo"
+  mkfile.puts "\t#{command}"
+  mkfile.puts 'else'
+  mkfile.puts "\t@echo #{option_str}"
+  mkfile.puts "\t@#{command}"
+  mkfile.puts 'endif'
+end
+
 File.open(TEST_MAKEFILE, 'w') do |mkfile|
   # Define make variables
   mkfile.puts 'CC ?= gcc'
@@ -48,12 +58,12 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
 
   # Build Unity
   mkfile.puts "#{UNITY_OBJ}: #{UNITY_SRC}/unity.c"
-  mkfile.puts "\t${CC} -o $@ -c $< -I #{UNITY_SRC}"
+  write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< -I #{UNITY_SRC}", "Compiling $@")
   mkfile.puts ''
 
   # Build CMock
   mkfile.puts "#{CMOCK_OBJ}: #{CMOCK_SRC}/cmock.c"
-  mkfile.puts "\t${CC} -o $@ -c $< -I #{UNITY_SRC} -I #{CMOCK_SRC}"
+  write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< -I #{UNITY_SRC} -I #{CMOCK_SRC}", "Compiling $@")
   mkfile.puts ''
 
   test_sources = Dir["#{TEST_DIR}/**/test_*.c"]
@@ -97,7 +107,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
     unless makefile_targets.include? module_obj
       makefile_targets.push(module_obj)
       mkfile.puts "#{module_obj}: #{module_src}"
-      mkfile.puts "\t${CC} -o $@ -c $< ${TEST_CFLAGS} -I ${SRC_DIR} ${INCLUDE_PATH}"
+      write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I ${SRC_DIR} ${INCLUDE_PATH}", "Compiling $@")
       mkfile.puts ''
     end
 
@@ -114,7 +124,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
 
       makefile_targets.push(linkonlymodule_obj)
       mkfile.puts "#{linkonlymodule_obj}: #{linkonlymodule_src}"
-      mkfile.puts "\t${CC} -o $@ -c $< ${TEST_CFLAGS} -I ${SRC_DIR} ${INCLUDE_PATH}"
+      write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I ${SRC_DIR} ${INCLUDE_PATH}", "Linking module $@")
       mkfile.puts ''
     end
 
@@ -125,7 +135,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
 
     # Build runner
     mkfile.puts "#{runner_obj}: #{runner_source}"
-    mkfile.puts "\t${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{SRC_DIR} -I #{MOCKS_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} ${INCLUDE_PATH}"
+    write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{SRC_DIR} -I #{MOCKS_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} ${INCLUDE_PATH}", "Compiling $@")
     mkfile.puts ''
 
     # Collect mocks to generate
@@ -141,7 +151,6 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
       all_headers.each do |header|
         if File.basename(header) =~ /[\/\\]?#{name}$/
           header_to_mock = header
-          break
         end
       end
       raise "Module header '#{name}' not found to mock!" unless header_to_mock
@@ -158,18 +167,18 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
 
     # Build test suite
     mkfile.puts "#{test_obj}: #{test} #{module_obj} #{mock_objs.join(' ')}"
-    mkfile.puts "\t${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{SRC_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} -I #{MOCKS_DIR} ${INCLUDE_PATH}"
+    write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{SRC_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} -I #{MOCKS_DIR} ${INCLUDE_PATH}", "Compiling $@")
     mkfile.puts ''
 
     # Build test suite executable
     test_objs = "#{test_obj} #{runner_obj} #{module_obj} #{mock_objs.join(' ')} #{linkonly_objs.join(' ')} #{UNITY_OBJ} #{CMOCK_OBJ}"
     mkfile.puts "#{test_bin}: #{test_objs}"
-    mkfile.puts "\t${CC} -o $@ #{test_objs} ${LDFLAGS}"
+    write_verbose_compile_option(mkfile, "${CC} -o $@ #{test_objs} ${LDFLAGS}", "Linking $@")
     mkfile.puts ''
 
     # Run test suite and generate report
     mkfile.puts "#{test_results}: #{test_bin}"
-    mkfile.puts "\t-#{test_bin} > #{test_results} 2>&1"
+    write_verbose_compile_option(mkfile, "-#{test_bin} > #{test_results} 2>&1", "Running #{test_bin}")
     mkfile.puts ''
 
     test_targets << test_bin
@@ -187,7 +196,7 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
     mkfile.puts ''
 
     mkfile.puts "#{mock_obj}: #{mock_src} #{mock_header}"
-    mkfile.puts "\t${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{MOCKS_DIR} -I #{SRC_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} ${INCLUDE_PATH}"
+    write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{MOCKS_DIR} -I #{SRC_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} ${INCLUDE_PATH}", "Compiling $@")
     mkfile.puts ''
   end
 
