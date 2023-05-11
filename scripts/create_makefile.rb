@@ -191,11 +191,11 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
     mock_src = File.join(MOCKS_DIR, mock_name + '.c')
     mock_obj = File.join(MOCKS_DIR, mock_name + '.o')
 
-    mkfile.puts "#{mock_src} #{mock_header}: #{hdr}"
+    mkfile.puts "#{mock_src}: #{hdr}"
     mkfile.puts "\t@CMOCK_DIR=${CMOCK_DIR} ruby ${CMOCK_DIR}/scripts/create_mock.rb #{hdr}"
     mkfile.puts ''
 
-    mkfile.puts "#{mock_obj}: #{mock_src} #{mock_header}"
+    mkfile.puts "#{mock_obj}: #{mock_src}"
     write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{MOCKS_DIR} -I #{SRC_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} ${INCLUDE_PATH}", "Compiling $@")
     mkfile.puts ''
   end
