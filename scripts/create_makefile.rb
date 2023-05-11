@@ -133,11 +133,6 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
     mkfile.puts "\t@UNITY_DIR=${UNITY_DIR} ruby ${CMOCK_DIR}/scripts/create_runner.rb #{test} #{runner_source}"
     mkfile.puts ''
 
-    # Build runner
-    mkfile.puts "#{runner_obj}: #{runner_source}"
-    write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{SRC_DIR} -I #{MOCKS_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} ${INCLUDE_PATH}", "Compiling $@")
-    mkfile.puts ''
-
     # Collect mocks to generate
     system_mocks = cfg[:includes][:system].select { |name| name =~ MOCK_MATCHER }
     raise 'Mocking of system headers is not yet supported!' unless system_mocks.empty?
@@ -164,6 +159,11 @@ File.open(TEST_MAKEFILE, 'w') do |mkfile|
       File.join(MOCKS_DIR, mock_name + '.o')
     end
     all_headers_to_mock.uniq!
+
+    # Build runner
+    mkfile.puts "#{runner_obj}: #{runner_source} #{module_obj} #{mock_objs.join(' ')}"
+    write_verbose_compile_option(mkfile, "${CC} -o $@ -c $< ${TEST_CFLAGS} -I #{SRC_DIR} -I #{MOCKS_DIR} -I #{UNITY_SRC} -I #{CMOCK_SRC} ${INCLUDE_PATH}", "Compiling $@")
+    mkfile.puts ''
 
     # Build test suite
     mkfile.puts "#{test_obj}: #{test} #{module_obj} #{mock_objs.join(' ')}"
