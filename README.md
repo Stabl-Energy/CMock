@@ -1,11 +1,17 @@
-CMock ![CI](https://github.com/ThrowTheSwitch/CMock/workflows/CI/badge.svg)
+STABL mirror of CMock ![CI](https://github.com/ThrowTheSwitch/CMock/workflows/CI/badge.svg)
+=====
+Welcome to the STABL mirror of CMock. This mirror was made to make small changes to better incorporate CMock in to our Make build system. More changes will likely come to this repository.
+
+To get started, find the C Unittest guideline in Confluence.
+
+Introduction
 =====
 CMock is a mock and stub generator and runtime for unit testing C. It's been designed
-to work smoothly with Unity Test, another of the embedded-software testing tools 
+to work smoothly with Unity Test, another of the embedded-software testing tools
 developed by ThrowTheSwitch.org. CMock automagically parses your C headers and creates
 useful and usable mock interfaces for unit testing. Give it a try!
 
-If you don't care to manage unit testing builds yourself, consider checking out Ceedling, 
+If you don't care to manage unit testing builds yourself, consider checking out Ceedling,
 a test-centered build manager for unit testing C code.
 
 Getting Started
